@@ -1,0 +1,20 @@
+# Hierarchical Folder Configuration (plugins/official/kent_ongoru/plugin_manifest.yaml)
+folder_name: "kent_ongoru"
+relative_path: "plugins/official/kent_ongoru"
+description: "Hierarchical module directory `plugins/official/kent_ongoru` in c:\qgis_plugin."
+qgis_compatible: true
+supports_qt6: true
+subdirectories:
+  - "core"
+  - "gis"
+  - "icons"
+  - "processing_provider"
+  - "tests"
+  - "ui"
+files:
+  - "CHANGELOG.md"
+  - "LICENSE"
+  - "README.md"
+  - "__init__.py"
+  - "metadata.txt"
+  - "plugin.py"

@@ -1,0 +1,15 @@
+# Hierarchical Folder Configuration (plugins/official/kent_ongoru/ui/folder_config.yaml)
+folder_name: "ui"
+relative_path: "plugins/official/kent_ongoru/ui"
+description: "Qt5 ve Qt6 uyumlu kullanıcı arayüzü diyalogları, özel bileşenler (widgets) ve 300 DPI QPainter grafik çizim motorları."
+qgis_compatible: true
+supports_qt6: true
+subdirectories:
+  []
+files:
+  - "__init__.py"
+  - "charts.py"
+  - "main_dialog.py"
+  - "population_page.py"
+  - "vulnerability_page.py"
+  - "widgets.py"

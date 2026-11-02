@@ -1,18 +1,25 @@
 # -*- coding: utf-8 -*-
-"""Processing sağlayıcısı: model oluşturucu ve toplu işlem için iki algoritma."""
+"""Processing sağlayıcısı: model oluşturucu ve toplu işlem için dört algoritma."""
 
 import os
 
 from qgis.core import QgsProcessingProvider
 from qgis.PyQt.QtGui import QIcon
 
-from .algorithms import CompositeIndexAlgorithm, PayPaydaIndexAlgorithm
+from .algorithms import (
+    CompositeIndexAlgorithm,
+    PayPaydaIndexAlgorithm,
+    PopulationAllocationAlgorithm,
+    RiskPriorityMatrixAlgorithm,
+)
 
 
 class KentOngoruProvider(QgsProcessingProvider):
     def loadAlgorithms(self):  # noqa: N802 (QGIS API)
         self.addAlgorithm(PayPaydaIndexAlgorithm())
         self.addAlgorithm(CompositeIndexAlgorithm())
+        self.addAlgorithm(RiskPriorityMatrixAlgorithm())
+        self.addAlgorithm(PopulationAllocationAlgorithm())
 
     def id(self):
         return "kent_ongoru"

@@ -23,14 +23,14 @@ geleceğin <b>nüfusunu</b> ve kentin <b>kırılganlığını</b> aynı veri üz
 <li><b>Kuşak-bileşen</b>: 17 beş yaşlık grup, cinsiyete göre Sx yaşama oranları, yaşa özel
 doğurganlık (ASFR), isteğe bağlı hedef TFR geçişi, yaş profilli net göç (oran ya da kişi/yıl).</li>
 <li><b>Trend yöntemleri</b>: aritmetik, geometrik, üstel, İller Bankası (%1–%3 sınırlı),
-doğrusal regresyon (EKK), 2. derece polinom, lojistik (doyumlu). Her biri için R² ve son gözlemi
+doğrusal regresyon (EKK), 2. derece polinom, lojistik (doyumlu). Her biri için R², MAPE (%) ve son gözlemi
 dışarıda bırakan <b>geriye dönük sınama hatası</b>.</li>
 <li><b>İktisadi temel</b>: toplam istihdam artışı ya da temel sektör × baz çarpanı; bağımlılık oranı;
 doğal çalışma çağı artışıyla karşılanan işleri düşme seçeneği.</li>
 <li><b>Senaryolar</b>: düşük / orta / yüksek için kaynak seçimi, plan nüfusu.</li>
 <li><b>Donatı</b>: düzenlenebilir kişi başı standart tablosu ile net ek alan (m², ha).</li>
-<li><b>Mahalle dağıtımı</b>: oransal, planlama bölgesi payı, plan kapasitesiyle sınırlı;
-toplam birebir korunur, sonuç yeni harita katmanı olarak eklenir.</li>
+<li><b>Mahalle dağıtımı</b>: oransal, planlama bölgesi payı, plan kapasitesiyle sınırlı veya
+<b>kırılganlık duyarlı güvenli dağıtım</b>; toplam birebir korunur, sonuç yeni harita katmanı olarak eklenir.</li>
 </ul>
 <h3>2 · Kentsel kırılganlık</h3>
 <p>Stüdyoda kullanılan pay / payda yöntemi: göstergeler 1–5 puanlanır; kırılganlığı artıran
@@ -46,14 +46,16 @@ bakının dairesel ortalaması.</li>
 <li>Sınıflama: geometrik aralık, Jenks, eşit sayılı, eşit aralık. Bölge başına baskın kötü etkenler ve
 zayıf uyum kapasitesi yazılır.</li>
 <li><b>Duyarlılık</b>: her gösterge çıkarıldığında derecesi değişen bölge oranı ve Spearman ρ.</li>
-<li><b>Bileşik endeks</b>: normalize K'ların ağırlıklı ortalaması (doğrusal ya da logaritmik),
-tehlike sayısı ve çoklu tehlike teşhisi.</li>
+<li><b>Bileşik endeks ve Müdahale Önceliği</b>: normalize K'ların ağırlıklı ortalaması (doğrusal ya da logaritmik),
+tehlike sayısı, çoklu tehlike teşhisi, Nüfus × Kırılganlık müdahale öncelik skoru (<code>BIL_Oncelik</code>) ve
+mekansal planlama kararı (<code>BIL_Karar</code>).</li>
 <li>Kaynak katmanlar hiç değiştirilmez; sonuçlar ayrı katmana yazılır ve her tehlike için ayrı
 adlandırılmış stil kaydedilir (Katman Stilleri panelinden geçiş).</li>
 </ul>
 <h3>Çıktılar</h3>
 <p>Tek dosya HTML rapor (gömülü grafik ve harita), çok sayfalı Excel (.xlsx; ek kitaplık gerekmez),
-300 DPI PNG grafikler, Processing araç kutusunda iki algoritma (pay/payda endeksi, bileşik endeks).</p>
+300 DPI PNG grafikler, Processing araç kutusunda dört algoritma (pay/payda endeksi, bileşik endeks,
+Nüfus × Kırılganlık müdahale öncelik matrisi, hedef nüfus mahalle dağıtımı ve donatı ihtiyacı).</p>
 <h3>Veri ve sorumluluk</h3>
 <p class='note'>Ön ayar eşikleri, Sx/ASFR değerleri ve donatı standartları öğrencinin Tire stüdyo
 çalışmasından aktarılmıştır. Başka bir yerleşimde kullanmadan önce yerel veriye ve yürürlükteki

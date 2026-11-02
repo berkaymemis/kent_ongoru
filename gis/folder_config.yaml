@@ -1,0 +1,15 @@
+# Hierarchical Folder Configuration (plugins/official/kent_ongoru/gis/folder_config.yaml)
+folder_name: "gis"
+relative_path: "plugins/official/kent_ongoru/gis"
+description: "PyQGIS katman çıkarımı (Extractor), Qt5/Qt6 uyumluluk köprüsü (compat.py), bellek katmanı üretimi, adlandırılmış stiller (Named Styles) ve mekânsal iş akışı motoru."
+qgis_compatible: true
+supports_qt6: true
+subdirectories:
+  []
+files:
+  - "__init__.py"
+  - "compat.py"
+  - "extract.py"
+  - "maprender.py"
+  - "output.py"
+  - "run.py"

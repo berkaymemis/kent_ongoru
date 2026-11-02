@@ -4,6 +4,7 @@
 from qgis.core import QgsProject
 
 from ..core import presets
+from ..core import priority as pr
 from ..core import vulnerability as vu
 from .extract import Extractor
 from .output import (RESULT_PROP, apply_class_style, create_copy_layer, ensure_fields,
@@ -127,7 +128,25 @@ class CompositeRun:
         self.breaks = []
         self.classes = []
         self.labels = []
+        self.priority_scores = []
+        self.decisions = []
         self.ids = []
+
+
+def _extract_optional_population(layer, feats):
+    pop_candidates = ("NUFUS", "nufus", "Nufus", "POPULATION", "population", "TOPLAM_NUFUS", "Y_R_SN", "S_R_SN", "D_R_SN")
+    field_names = layer.fields().names()
+    chosen = next((c for c in pop_candidates if c in field_names), None)
+    if not chosen:
+        return None
+    pops = []
+    for f in feats:
+        v = f[chosen]
+        try:
+            pops.append(None if v is None or (hasattr(v, "isNull") and v.isNull()) else float(v))
+        except (TypeError, ValueError):
+            pops.append(None)
+    return pops
 
 
 def run_composite(layer, weights, log=False, break_method="geometrik", id_field=None,
@@ -162,24 +181,37 @@ def run_composite(layer, weights, log=False, break_method="geometrik", id_field=
         diag.append(vu.multi_hazard_label(row, nice))
     hazard_count = [sum(1 for k in names if norm[k][r] is not None and norm[k][r] >= 50.0)
                     for r in range(len(feats))]
+    pops = _extract_optional_population(layer, feats)
+    pmat = pr.compute_priority_matrix(
+        populations=pops,
+        vuln_indices=comp,
+        vuln_classes=classes,
+        break_method=break_method,
+    )
     specs = [("K_BIL", "double"), ("BIL_Derece", "int"), ("BIL_Sinif", "string"),
-             ("BIL_Teshis", "string"), ("BIL_TehlikeSay", "int")]
+             ("BIL_Teshis", "string"), ("BIL_TehlikeSay", "int"),
+             ("BIL_Oncelik", "double"), ("BIL_Karar", "string")]
     cols = {"K_BIL": [None if v is None else round(v, 2) for v in comp],
             "BIL_Derece": classes,
             "BIL_Sinif": [vu.CLASS_LABELS[c - 1] if c else None for c in classes],
             "BIL_Teshis": diag,
-            "BIL_TehlikeSay": hazard_count}
+            "BIL_TehlikeSay": hazard_count,
+            "BIL_Oncelik": pmat["scores"],
+            "BIL_Karar": pmat["decisions"]}
     for k in names:
         specs.append(("N_%s" % k, "double"))
         cols["N_%s" % k] = [None if v is None else round(v, 2) for v in norm[k]]
     ensure_fields(layer, specs)
     write_columns(layer, cols)
+    apply_class_style(layer, "BIL_Oncelik", pmat["breaks"], presets.PALETTES["bilesik"],
+                      style_name="Müdahale Önceliği")
     apply_class_style(layer, "K_BIL", breaks, presets.PALETTES["bilesik"],
                       style_name="Bileşik")
     run = CompositeRun()
     run.layer = layer
     run.values, run.norm, run.weights = comp, norm, w
     run.breaks, run.classes, run.labels = breaks, classes, diag
+    run.priority_scores, run.decisions = pmat["scores"], pmat["decisions"]
     run.ids = [str(f[id_field]) if id_field and id_field in f.fields().names() else str(f.id())
                for f in feats]
     return run

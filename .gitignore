@@ -1,0 +1,7 @@
+# Hierarchical folder .gitignore
+__pycache__/
+*.py[cod]
+*.bak
+*.tmp
+.DS_Store
+Thumbs.db

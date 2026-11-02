@@ -2,15 +2,15 @@
 name=Kent Öngörü - Population Projection and Urban Vulnerability
 qgisMinimumVersion=3.28
 qgisMaximumVersion=4.99
-description=Two-module planning studio: cohort-component and trend population projection with facility needs and neighbourhood allocation, plus indicator-based flood, heat and earthquake vulnerability (bad-over-good index) with a composite multi-hazard index.
-version=1.0.0
+description=Two-module planning studio: cohort-component and trend population projection with facility needs and risk-aware neighbourhood allocation, plus indicator-based flood, heat and earthquake vulnerability (bad-over-good index) with a composite multi-hazard priority matrix.
+version=1.1.0
 author=Berkay Memiş
 email=berkaymemis48@icloud.com
 
 about=Kent Öngörü ("urban foresight") brings the two questions of a planning studio into one window.
-    Module 1 - Population projection: cohort-component model (17 age groups by sex, survival ratios, age-specific fertility, optional target TFR, age-profiled net migration); seven trend methods (arithmetic, geometric, exponential, Iller Bankasi, linear regression, quadratic, logistic) each with R-squared and a leave-last-out backtest error; economic base / employment multiplier migration with an optional local labour-supply correction; low / mid / high scenarios; facility area needs from an editable per-capita standard table; neighbourhood allocation by share, planning zone or plan capacity, written to a new styled layer.
-    Module 2 - Urban vulnerability: every indicator is scored 1-5; indicators that raise vulnerability (exposure, sensitivity) multiply the numerator and indicators that lower it (adaptive capacity) multiply the denominator, K = product(bad) / product(good). Presets for flood, extreme heat and earthquake/evacuation plus a fully custom index. Raw values are extracted from layers automatically: building coverage, floor area ratio, area-weighted floors and categories, road length shares, nearest distances, raster zonal means and circular aspect. Five classes by geometric interval, Jenks, quantile or equal interval; per-region dominant drivers; leave-one-indicator-out sensitivity; weighted composite index with multi-hazard diagnosis. Source layers are never modified; each hazard is saved as a named layer style.
-    Outputs: single-file HTML report with charts and maps, multi-sheet Excel workbook without extra libraries, 300 DPI PNG charts, and two Processing algorithms. The interface is in Turkish.
+    Module 1 - Population projection: cohort-component model (17 age groups by sex, survival ratios, age-specific fertility, optional target TFR, age-profiled net migration); seven trend methods (arithmetic, geometric, exponential, Iller Bankasi, linear regression, quadratic, logistic) each with R-squared, MAPE, RMSE and a leave-last-out backtest error; economic base / employment multiplier migration with an optional local labour-supply correction; low / mid / high scenarios; facility area needs from an editable per-capita standard table; neighbourhood allocation by share, planning zone, plan capacity or vulnerability-sensitive safe growth, written to a new styled layer.
+    Module 2 - Urban vulnerability: every indicator is scored 1-5; indicators that raise vulnerability (exposure, sensitivity) multiply the numerator and indicators that lower it (adaptive capacity) multiply the denominator, K = product(bad) / product(good). Presets for flood, extreme heat and earthquake/evacuation plus a fully custom index. Raw values are extracted from layers automatically: building coverage, floor area ratio, area-weighted floors and categories, road length shares, nearest distances, raster zonal means and circular aspect. Five classes by geometric interval, Jenks, quantile or equal interval; per-region dominant drivers; leave-one-indicator-out sensitivity; weighted composite index with multi-hazard diagnosis, cross-module Population x Vulnerability intervention priority score (BIL_Oncelik) and urban planning policy decisions (BIL_Karar). Source layers are never modified; each hazard is saved as a named layer style.
+    Outputs: single-file HTML report with charts and maps, multi-sheet Excel workbook without extra libraries, 300 DPI PNG charts, and four Processing algorithms. The interface is in Turkish.
 
 tracker=https://github.com/berkaymemis/kent_ongoru/issues
 repository=https://github.com/berkaymemis/kent_ongoru
@@ -27,4 +27,5 @@ supportsQt6=True
 license=GPL-2.0-or-later
 
 changelog=
+    1.1.0 - Added cross-module Population x Vulnerability intervention priority matrix (core/priority.py) generating priority scores (BIL_Oncelik / ONCELIK_SKOR), risk-exposed population (RISK_NUFUS) and 5-tier urban planning policy decisions (PLAN_KARARI); added vulnerability-sensitive safe neighbourhood population allocation (kirilganlik_duyarli); added MAPE and RMSE accuracy metrics plus CAGR and doubling-time utilities to trend models; expanded Processing provider to 4 algorithms (added RiskPriorityMatrixAlgorithm and PopulationAllocationAlgorithm); verified full dual compatibility on QGIS 3.44 LTR (Qt5) and QGIS 4.2+ (Qt6).
     1.0.0 - First release. Merges the student tools "Tire Nufus Projeksiyon" and the flood, heat, earthquake and composite vulnerability packages into one plugin with two modules.

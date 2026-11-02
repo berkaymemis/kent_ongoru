@@ -1,0 +1,20 @@
+# Hierarchical Folder Configuration (plugins/official/kent_ongoru/core/folder_config.yaml)
+folder_name: "core"
+relative_path: "plugins/official/kent_ongoru/core"
+description: "Saf Python matematiksel modeller, indeks motorları, Nüfus × Kırılganlık öncelik matrisi, tek-dosya HTML raporlama ve sıfır-bağımlılıklı OpenXML (.xlsx) üretici katmanı (QGIS/PyQt bağımlılığı içermez)."
+qgis_compatible: true
+supports_qt6: true
+subdirectories:
+  []
+files:
+  - "__init__.py"
+  - "allocation.py"
+  - "cohort.py"
+  - "economic.py"
+  - "facilities.py"
+  - "presets.py"
+  - "priority.py"
+  - "report.py"
+  - "trends.py"
+  - "vulnerability.py"
+  - "xlsx.py"

@@ -14,10 +14,17 @@ Yöntemler
               orantılı dağıtılır; kapasitesi dolan mahalle sınırda tutulur ve
               artan pay diğerlerine aktarılır. Hiçbir yere sığmayan nüfus
               "dağıtılamayan" olarak raporlanır.
+``kirilganlik_duyarli``
+              Artış, mahallelerin mevcut nüfusu ve kırılganlık derecesi (1=çok
+              yüksek ... 5=çok düşük) ağırlıklarıyla dağıtılır; 1. ve 2. derece
+              riskli mahallelere yeni nüfus yüklenmez, büyüme güvenli gelişme
+              alanlarına yönlendirilir (varsa plan kapasitesi sınırı da korunur).
 
 Tüm yöntemler en büyük kalan yöntemiyle tam sayıya yuvarlar; mahalle toplamı
 hedef nüfusa birebir eşittir (dağıtılamayan dışında).
 """
+
+from . import priority as pr
 
 
 def _round_preserving(values, total):
@@ -96,14 +103,54 @@ def by_capacity(pops, capacities, target, max_iter=100):
     return result, max(0.0, remaining)
 
 
+def by_risk_aware(pops, vuln_classes, target, capacities=None, max_iter=100):
+    """Kırılganlık duyarlı güvenli nüfus dağıtımı. (değerler, dağıtılamayan) döndürür."""
+    result = [float(p) for p in pops]
+    growth = target - sum(pops)
+    if growth <= 0:
+        return _shares(pops, target), 0.0
+    weights = pr.vulnerability_weights(pops, vuln_classes)
+    if not capacities or all(c is None for c in capacities):
+        adds = _shares(weights, growth)
+        return [r + a for r, a in zip(result, adds)], 0.0
+    remaining = growth
+    open_idx = [i for i in range(len(pops))
+                if capacities[i] is None or capacities[i] > result[i]]
+    for _ in range(max_iter):
+        if remaining <= 1e-6 or not open_idx:
+            break
+        w_open = [weights[i] for i in open_idx]
+        adds = _shares(w_open, remaining)
+        still_open = []
+        used = 0.0
+        for i, add in zip(open_idx, adds):
+            cap = capacities[i]
+            room = (cap - result[i]) if cap is not None else add
+            take = min(add, max(0.0, room))
+            result[i] += take
+            used += take
+            if cap is None or (cap - result[i] > 1e-6):
+                still_open.append(i)
+        remaining -= used
+        open_idx = still_open
+    return result, max(0.0, remaining)
+
+
 def allocate(names, pops, target, method="oransal", zones=None, zone_shares=None,
-             capacities=None):
+             capacities=None, vuln_classes=None):
     pops = [max(0.0, float(p or 0)) for p in pops]
     unallocated = 0.0
     if method == "bolge":
         values = by_zone(pops, zones or ["—"] * len(pops), zone_shares or {}, target)
     elif method == "kapasite":
         values, unallocated = by_capacity(pops, capacities or [None] * len(pops), target)
+    elif method == "kirilganlik_duyarli":
+        values, unallocated = by_risk_aware(
+            pops,
+            vuln_classes or [3] * len(pops),
+            target,
+            capacities=capacities,
+        )
     else:
         values = proportional(pops, target)
     ints = _round_preserving(values, target - unallocated)

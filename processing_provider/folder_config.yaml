@@ -1,0 +1,12 @@
+# Hierarchical Folder Configuration (plugins/official/kent_ongoru/processing_provider/folder_config.yaml)
+folder_name: "processing_provider"
+relative_path: "plugins/official/kent_ongoru/processing_provider"
+description: "QGIS Processing Toolbox ve Grafik Modelleyici (Graphical Modeler) entegrasyonu için QgsProcessingProvider ve QgsProcessingAlgorithm sınıfları."
+qgis_compatible: true
+supports_qt6: true
+subdirectories:
+  []
+files:
+  - "__init__.py"
+  - "algorithms.py"
+  - "provider.py"

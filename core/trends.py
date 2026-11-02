@@ -22,6 +22,8 @@ class TrendModel:
         self.params_text = params_text
         self.fitted = fitted or []
         self.r2 = r2
+        self.mape = None             # ortalama mutlak yüzde hata (%)
+        self.rmse = None             # kök ortalama kare hata (kişi)
         self.backtest_error = None   # yüzde (+ fazla tahmin, - eksik tahmin)
 
     def predict(self, year):
@@ -41,6 +43,33 @@ def _r2(obs, pred):
     ss_tot = sum((o - mean) ** 2 for o in obs)
     ss_res = sum((o - p) ** 2 for o, p in zip(obs, pred))
     return 1.0 - ss_res / ss_tot if ss_tot > 0 else None
+
+
+def _mape(obs, pred):
+    valid = [abs((o - p) / o) * 100.0 for o, p in zip(obs, pred) if o and abs(o) > 1e-9]
+    return sum(valid) / len(valid) if valid else None
+
+
+def _rmse(obs, pred):
+    if not obs:
+        return None
+    return math.sqrt(sum((o - p) ** 2 for o, p in zip(obs, pred)) / len(obs))
+
+
+def cagr(years, pops):
+    """Bileşik yıllık büyüme hızı (CAGR, oran olarak; ör. 0.012 = %1.2)."""
+    ys, ps = _clean(years, pops)
+    span = ys[-1] - ys[0]
+    if span <= 0 or ps[0] <= 0:
+        return 0.0
+    return (ps[-1] / ps[0]) ** (1.0 / span) - 1.0
+
+
+def doubling_time(rate):
+    """Yıllık büyüme oranından (ör. 0.015) nüfus ikiye katlanma süresini (yıl) hesaplar."""
+    if rate is None or rate <= 0:
+        return None
+    return math.log(2.0) / math.log(1.0 + float(rate))
 
 
 def arithmetic(years, pops):
@@ -199,6 +228,9 @@ def run_all(years, pops, saturation=None):
         except (ValueError, ZeroDivisionError, OverflowError) as exc:
             errors[key] = str(exc)
             continue
+        preds = model.fitted if model.fitted and len(model.fitted) == len(ys) else [model.predict(y) for y in ys]
+        model.mape = _mape(ps, preds)
+        model.rmse = _rmse(ps, preds)
         if len(ys) >= 3:
             try:
                 sub = fn(ys[:-1], ps[:-1], saturation) if key == "lojistik" else fn(ys[:-1], ps[:-1])

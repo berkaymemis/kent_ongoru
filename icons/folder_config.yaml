@@ -1,0 +1,11 @@
+# Hierarchical Folder Configuration (plugins/official/kent_ongoru/icons/folder_config.yaml)
+folder_name: "icons"
+relative_path: "plugins/official/kent_ongoru/icons"
+description: "Eklenti araç çubuğu, menü ve Processing kutusu için yüksek çözünürlüklü PNG/SVG ikon varlıkları."
+qgis_compatible: true
+supports_qt6: true
+subdirectories:
+  []
+files:
+  - "icon.png"
+  - "icon_512.png"

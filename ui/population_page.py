@@ -198,7 +198,7 @@ class PopulationPage(QWidget):
         lay.addLayout(row)
         split = QSplitter(Qt.Orientation.Vertical)
         self.trend_table = make_table(["Yöntem", "Hedef yıl nüfusu", "Parametre", "R²",
-                                       "Geriye dönük hata (%)"])
+                                       "MAPE (%)", "Geriye dönük hata (%)"])
         split.addWidget(self.trend_table)
         self.trend_chart = LineChart()
         split.addWidget(self.trend_chart)
@@ -382,6 +382,7 @@ class PopulationPage(QWidget):
         self.alloc_method.addItem("Mevcut nüfus payıyla (oransal)", "oransal")
         self.alloc_method.addItem("Planlama bölgesine göre artış payı", "bolge")
         self.alloc_method.addItem("Plan kapasitesiyle sınırlı", "kapasite")
+        self.alloc_method.addItem("Kırılganlık duyarlı güvenli dağıtım", "kirilganlik_duyarli")
         f.addRow("Yöntem", self.alloc_method)
         self.zone_field = QgsFieldComboBox()
         self.zone_field.setAllowEmptyFieldName(True)
@@ -397,12 +398,17 @@ class PopulationPage(QWidget):
         self.cap_field.setFilters(field_filter_numeric())
         self.cap_field.setAllowEmptyFieldName(True)
         f.addRow("Kapasite alanı (kişi)", self.cap_field)
+        self.vuln_field = QgsFieldComboBox()
+        self.vuln_field.setFilters(field_filter_numeric())
+        self.vuln_field.setAllowEmptyFieldName(True)
+        f.addRow("Kırılganlık derece alanı (1-5)", self.vuln_field)
         lay.addWidget(g)
         for wdg in (self.alloc_method,):
             wdg.currentIndexChanged.connect(self.schedule)
         self.zone_table.itemChanged.connect(self.schedule)
         self.zone_field.fieldChanged.connect(self._read_neighbourhood_attrs)
         self.cap_field.fieldChanged.connect(self._read_neighbourhood_attrs)
+        self.vuln_field.fieldChanged.connect(self._read_neighbourhood_attrs)
         row = QHBoxLayout()
         self.alloc_info = hint("")
         row.addWidget(self.alloc_info, 1)
@@ -485,6 +491,7 @@ class PopulationPage(QWidget):
         self.mh_pop.setLayer(layer)
         self.zone_field.setLayer(layer)
         self.cap_field.setLayer(layer)
+        self.vuln_field.setLayer(layer)
         if layer is not None:
             self.mh_name.setField(_find(layer, NAME_HINTS))
             self.mh_pop.setField(_find(layer, POP_HINTS))
@@ -532,7 +539,8 @@ class PopulationPage(QWidget):
             return
         name_f, pop_f = self.mh_name.currentField(), self.mh_pop.currentField()
         zone_f, cap_f = self.zone_field.currentField(), self.cap_field.currentField()
-        out = []
+        vuln_f = self.vuln_field.currentField() if hasattr(self, "vuln_field") else ""
+        out, vulns = [], []
         for feat in layer.getFeatures():
             name = str(feat[name_f]) if name_f else str(feat.id())
             try:
@@ -546,8 +554,16 @@ class PopulationPage(QWidget):
                     cap = float(feat[cap_f])
                 except (TypeError, ValueError):
                     cap = None
+            v_deg = 3
+            if vuln_f:
+                try:
+                    v_deg = max(1, min(5, int(round(float(feat[vuln_f])))))
+                except (TypeError, ValueError):
+                    v_deg = 3
             out.append((name, pop, zone, cap))
+            vulns.append(v_deg)
         self.neighbourhoods = out
+        self.neighbourhood_vulns = vulns
         self.schedule()
 
     def _load_zones(self):
@@ -752,13 +768,14 @@ class PopulationPage(QWidget):
         for i, mdl in enumerate(self.trend_models):
             rows.append([mdl.name, mdl.predict(ty), mdl.params_text,
                          None if mdl.r2 is None else round(mdl.r2, 4),
+                         None if mdl.mape is None else round(mdl.mape, 2),
                          None if mdl.backtest_error is None else round(mdl.backtest_error, 2)])
             x0 = min(ys)
             pts = [(x, mdl.predict(x)) for x in range(int(x0), int(ty) + 1)]
             series.append((mdl.name, SERIES[i % len(SERIES)], pts, False))
         for key, err in self.trend_errors.items():
-            rows.append([key, None, "kurulamadı: " + err, None, None])
-        fill_table(self.trend_table, rows, numeric=(1, 3, 4), decimals={3: 4, 4: 2})
+            rows.append([key, None, "kurulamadı: " + err, None, None, None])
+        fill_table(self.trend_table, rows, numeric=(1, 3, 4, 5), decimals={3: 4, 4: 2, 5: 2})
         self.trend_chart.subtitle = "Hedef yıl %d · noktalar: gözlenen seri" % ty
         self.trend_chart.set_data(series, list(zip(ys, ps)), vline=self.base_year.value())
 
@@ -901,10 +918,11 @@ class PopulationPage(QWidget):
         pops = [p for _, p, _, _ in self.neighbourhoods]
         zones = [z for _, _, z, _ in self.neighbourhoods]
         caps = [c for _, _, _, c in self.neighbourhoods]
+        vulns = getattr(self, "neighbourhood_vulns", None)
         method = self.alloc_method.currentData()
         target = self.plan_pop * (sum(pops) / self._base_pop()) if self._base_pop() else self.plan_pop
         self.alloc_rows, self.alloc_unallocated = allocation.allocate(
-            names, pops, target, method, zones, self._zone_shares(), caps)
+            names, pops, target, method, zones, self._zone_shares(), caps, vuln_classes=vulns)
         per_cap = facilities.per_capita_total(self._standards())
         rows = []
         for r in sorted(self.alloc_rows, key=lambda d: -d["net_artis"]):
@@ -1024,10 +1042,11 @@ class PopulationPage(QWidget):
         scen += "<p class='note'>Plan nüfusu: %s</p>" % report.escape(self.plan_label)
         trend_rows = [[m.name, m.predict(ty), m.params_text,
                        "—" if m.r2 is None else "%.4f" % m.r2,
+                       "—" if m.mape is None else "%.2f" % m.mape,
                        "—" if m.backtest_error is None else "%.2f" % m.backtest_error]
                       for m in self.trend_models]
-        trend = report.table(["Yöntem", "Nüfus %d" % ty, "Parametre", "R²", "Geriye dönük hata %"],
-                             trend_rows, numeric_cols=(1, 3, 4)) + img(self.trend_chart, "Trend yöntemleri")
+        trend = report.table(["Yöntem", "Nüfus %d" % ty, "Parametre", "R²", "MAPE %", "Geriye dönük hata %"],
+                             trend_rows, numeric_cols=(1, 3, 4, 5)) + img(self.trend_chart, "Trend yöntemleri")
         coh = ""
         if self.cohort_result:
             rows = table_rows(self.cohort_table)

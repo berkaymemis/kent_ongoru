@@ -16,12 +16,12 @@ QGIS 3.28 – 4.x · Ek Python kitaplığı gerekmez (pandas, matplotlib, openpy
 | Sekme | Ne yapar |
 |---|---|
 | **1 · Veri** | Mahalle katmanından toplam nüfus, mahalle listesi ve (varsa) yaş-cinsiyet yapısını okur. 17 yaş grubu tablosu elle ya da Excel'den yapıştırılarak düzenlenebilir; geniş gruplardan (0-14 / 15-64 / 65+) 5'li gruplara dağıtılabilir. Geçmiş TÜİK ADNKS serisi panodan yapıştırılabilir. |
-| **2 · Trend yöntemleri** | Aritmetik, geometrik, üstel, İller Bankası (%1–%3), doğrusal regresyon (EKK), 2. derece polinom ve lojistik (doyumlu). Her yöntem için R² ve **geriye dönük sınama hatası** (son gözlem dışarıda bırakılıp tahmin edilir). |
+| **2 · Trend yöntemleri** | Aritmetik, geometrik, üstel, İller Bankası (%1–%3), doğrusal regresyon (EKK), 2. derece polinom ve lojistik (doyumlu). Her yöntem için R², MAPE (%) ve **geriye dönük sınama hatası** (son gözlem dışarıda bırakılıp tahmin edilir). |
 | **3 · Kuşak-bileşen** | Cinsiyete göre Sx yaşama oranları, ASFR, doğumda cinsiyet oranı, hedef yıla doğru TFR geçişi, yaş profilli net göç (yıllık oran ya da kişi/yıl). Yaş piramidi, bağımlılık oranı, yaşlanma endeksi, medyan yaş. |
 | **4 · İstihdam ve göç** | İktisadi temel: toplam istihdam artışı ya da *temel sektör işi × baz çarpanı*; bağımlılık oranı; isteğe bağlı olarak doğal çalışma çağı artışının karşıladığı işler düşülür. |
 | **5 · Senaryolar** | Düşük / orta / yüksek senaryo için kaynak seçimi; plan nüfusu. |
 | **6 · Donatı ihtiyacı** | Düzenlenebilir kişi başı standart tablosuyla net ek alan (m², ha). |
-| **7 · Mahalle dağıtımı** | Oransal, planlama bölgesi payı ya da plan kapasitesiyle sınırlı dağıtım; mahalle toplamı hedefe birebir eşittir; sonuç yeni, renklendirilmiş bir katman olarak eklenir. |
+| **7 · Mahalle dağıtımı** | Oransal, planlama bölgesi payı, plan kapasitesiyle sınırlı ya da **kırılganlık duyarlı güvenli dağıtım**; mahalle toplamı hedefe birebir eşittir; sonuç yeni, renklendirilmiş bir katman olarak eklenir. |
 | **8 · Rapor** | Tek dosya HTML rapor (gömülü grafikler), çok sayfalı Excel, 300 DPI PNG grafikler. |
 
 ## Modül 2: Kentsel kırılganlık
@@ -47,8 +47,9 @@ Sonuç 5 dereceye ayrılır (1. derece = çok yüksek kırılganlık).
 * **Teşhis:** her bölge için baskın kötü etkenler (puan ≥ 4) ve zayıf uyum kapasitesi (puan ≤ 2).
 * **Duyarlılık:** her gösterge tek tek çıkarıldığında derecesi değişen bölge oranı ve Spearman ρ,
   yani haritayı hangi verinin belirlediği.
-* **Bileşik endeks:** normalize K'ların ağırlıklı ortalaması (doğrusal ya da logaritmik),
-  yüksek tehlike sayısı ve çoklu tehlike teşhisi.
+* **Bileşik endeks ve müdahale öncelik matrisi:** normalize K'ların ağırlıklı ortalaması (doğrusal ya da logaritmik),
+  yüksek tehlike sayısı, çoklu tehlike teşhisi, Nüfus × Kırılganlık müdahale öncelik skoru (`BIL_Oncelik`) ve
+  5 kademeli mekansal planlama kararı (`BIL_Karar`).
 * Kaynak katmanlar **hiç değiştirilmez**. Sonuçlar ayrı bir katmana yazılır; her tehlike için
   ayrı adlandırılmış stil kaydedilir (Katman Stilleri panelinden geçilebilir).
 
@@ -85,14 +86,16 @@ değeri (3) alınır ve bölgenin `X_Eksik` alanına yazılır. Uydurma bir say�
 `K_Y`, `K_S`, `K_D`, `K_O` (endeks) · `Y_Pay`, `Y_Payda` · `Y_Derece` (1–5) · `Y_Sinif` ·
 `Y_Etken` (baskın kötü etkenler) · `Y_ZayifUyum` · `Y_Eksik` · `Y_R_<kod>` (ham değer) ·
 `Y_P_<kod>` (puan). Bileşik: `K_BIL`, `BIL_Derece`, `BIL_Sinif`, `BIL_Teshis`,
-`BIL_TehlikeSay`, `N_K_*`.
+`BIL_TehlikeSay`, `BIL_Oncelik`, `BIL_Karar`, `N_K_*`.
 
 ## Processing araçları
 
-*Kent Öngörü → Kentsel kırılganlık* grubunda, model oluşturucu ve toplu işlem için:
+*Kent Öngörü* sağlayıcısında, model oluşturucu ve toplu işlem için dört algoritma:
 
-* **Pay / payda kırılganlık endeksi:** puanları zaten alanlarda olan katmandan K ve derece.
-* **Bileşik (çoklu tehlike) endeksi:** alanlar + ağırlıklar (`40,35,25`) ile K_BIL.
+* **Pay / payda kırılganlık endeksi** (`kent_ongoru:pay_payda_endeksi`): puanları zaten alanlarda olan katmandan K ve derece.
+* **Bileşik (çoklu tehlike) endeksi** (`kent_ongoru:bilesik_endeks`): alanlar + ağırlıklar (`40,35,25`) ile K_BIL.
+* **Nüfus × Kırılganlık müdahale öncelik matrisi** (`kent_ongoru:nufus_kirilganlik_oncelik`): kırılganlık endeksi ve nüfus alanından 0–100 öncelik skoru (`ONCELIK_SKOR`), 1–5 öncelik derecesi, risk altındaki nüfus (`RISK_NUFUS`) ve mekansal planlama kararı (`PLAN_KARARI`).
+* **Hedef nüfus mahalle dağıtımı ve donatı ihtiyacı** (`kent_ongoru:nufus_mahalle_dagitimi`): hedef nüfusu mahallelere oransal, kapasite sınırlı veya kırılganlık duyarlı yöntemle dağıtır ve net ek donatı alanı (`Donati_m2`) hesaplar.
 
 ---
 
